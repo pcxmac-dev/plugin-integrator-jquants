@@ -6,7 +6,7 @@ listings stored as 7203.T and asked for by J-Quants' code, 72030 (client.jquants
 
 A Liminal plugin released on its own, registered under the entry point group `liminal.providers` as
 `jquants` (PLUGIN: one feed, an instance of `JQuantsPlugin` on the class contract, plugin API 2.0,
-liminal-lib 1.3.0: liminal_lib.sources.plugin.FeedPlugin; what it declares its class attributes, its
+liminal-libs 1.3.0: liminal_libs.sources.plugin.FeedPlugin; what it declares its class attributes, its
 plans' publication delays among them, what it does its methods); its version is this distribution's
 (pyproject.toml), so the instance's version is left empty.
 
@@ -33,10 +33,10 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date, timedelta
 
-from liminal_lib.config import Tier
-from liminal_lib.errors import NotEntitled, SourceError, Unauthorized
-from liminal_lib.freshness import Delay
-from liminal_lib.sources.registry import FeedPlugin, KeyVar, Scanned, limiter, machine_caps
+from liminal_libs.config import Tier
+from liminal_libs.errors import NotEntitled, SourceError, Unauthorized
+from liminal_libs.freshness import Delay
+from liminal_libs.sources.registry import FeedPlugin, KeyVar, Scanned, limiter, machine_caps
 from .client import API, BARS, MIC, JQuantsClient, JQuantsSource
 
 NAME = "jquants"

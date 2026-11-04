@@ -9,19 +9,19 @@ from importlib.metadata import version
 
 import pytest
 
-from liminal_lib import composite, freshness
-from liminal_lib.collector import history_floor
-from liminal_lib.config import load_settings
-from liminal_lib.errors import NotEntitled, RateLimited, SourceError, Unauthorized
-from liminal_lib.freshness import Delay
-from liminal_lib.sources import feed_profiles, is_archive, markets, provider, rate_window, registry, supports
-from liminal_lib.sources.archive import ET, ms
-from liminal_lib.sources.registry import FeedPlugin
-from liminal_lib.symbols import resolve
+from liminal_libs import composite, freshness
+from liminal_libs.collector import history_floor
+from liminal_libs.config import load_settings
+from liminal_libs.errors import NotEntitled, RateLimited, SourceError, Unauthorized
+from liminal_libs.freshness import Delay
+from liminal_libs.sources import feed_profiles, is_archive, markets, provider, rate_window, registry, supports
+from liminal_libs.sources.archive import ET, ms
+from liminal_libs.sources.registry import FeedPlugin
+from liminal_libs.symbols import resolve
 
-import liminal_plugin_jquants as jquants
-from liminal_plugin_jquants import PER_DAY, PER_RUN, TIER, plan_found, plan_of, probes
-from liminal_plugin_jquants.client import (API, BARS, MASTER, TSE, JQuantsClient, JQuantsSource, jquants_code, read_bars,
+import plugin_integrator_jquants as jquants
+from plugin_integrator_jquants import PER_DAY, PER_RUN, TIER, plan_found, plan_of, probes
+from plugin_integrator_jquants.client import (API, BARS, MASTER, TSE, JQuantsClient, JQuantsSource, jquants_code, read_bars,
                                            stored_ticker)
 
 from .conftest import FakeResponse, FakeSession
@@ -241,13 +241,13 @@ def test_the_app_loads_it_from_this_package_with_its_own_version():
     assert jquants.PLUGIN.name == "jquants" and not hasattr(jquants, "PLUGINS")
     p = provider("jquants")
     assert p is not None, dict(registry.errors())
-    assert p.origin in {"package: liminal-plugin-jquants (liminal_plugin_jquants)",
-                        "plugins/liminal-plugin-jquants (liminal_plugin_jquants)"}  # its package, or its checkout in the workspace's plugin directory
-    assert p.version == version("liminal-plugin-jquants") and p.api == "2.0"
+    assert p.origin in {"package: plugin-integrator-jquants (plugin_integrator_jquants)",
+                        "plugins/plugin-integrator-jquants (plugin_integrator_jquants)"}  # its package, or its checkout in the workspace's plugin directory
+    assert p.version == version("plugin-integrator-jquants") and p.api == "2.0"
     assert registry.api_refusal(p.api) is None and jquants.PLUGIN.version == ""
     assert not [why for where, why in registry.errors() if "jquants" in where or "jquants" in why]
     row = {r["name"]: r for r in registry.menu()}["jquants"]
-    assert (row["version"], row["api"]) == (version("liminal-plugin-jquants"), "2.0")
+    assert (row["version"], row["api"]) == (version("plugin-integrator-jquants"), "2.0")
     assert [k["name"] for k in row["keys"]] == ["JQUANTS_API_KEY"] and row["keys"][0]["secret"]
     assert row["planChoices"] == [{"name": "JQUANTS_PLAN", "choices": ["free", "light", "standard", "premium"]}]
     assert registry.plugin_feeds("jquants") == ["jquants"]
@@ -284,7 +284,7 @@ def test_it_keeps_its_facts(monkeypatch):
 
 
 def test_it_is_a_class_on_plugin_api_2_0():
-    """The plugin is an instance of its class (plugin API 2.0, liminal-lib 1.3.0): what it declares its class
+    """The plugin is an instance of its class (plugin API 2.0, liminal-libs 1.3.0): what it declares its class
     attributes, what it does its methods; the registry loads it as that class."""
     assert isinstance(jquants.PLUGIN, jquants.JQuantsPlugin) and isinstance(jquants.PLUGIN, FeedPlugin)
     assert jquants.PLUGIN.api == "2.0" and not jquants.PLUGIN.is_record

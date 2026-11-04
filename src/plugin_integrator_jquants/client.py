@@ -32,10 +32,10 @@ import re
 from datetime import date, datetime, timedelta
 from typing import Iterator
 
-from liminal_lib.errors import NotEntitled, SourceError, Unauthorized
-from liminal_lib.models import Exchange, Instrument, Stock, country, exchange_name, listing_ticker, suffix_mic
-from liminal_lib.sources.archive import ET, Archive as _Archive, bounds as _bounds, ms as _ms
-from liminal_lib.sources.http import PublicClient
+from liminal_libs.errors import NotEntitled, SourceError, Unauthorized
+from liminal_libs.models import Exchange, Instrument, Stock, country, exchange_name, listing_ticker, suffix_mic
+from liminal_libs.sources.archive import ET, Archive as _Archive, bounds as _bounds, ms as _ms
+from liminal_libs.sources.http import PublicClient
 
 API = "https://api.jquants.com"  # every path under /v2 (V1 was discontinued on 2026-06-01)
 BARS = "/v2/equities/bars/daily"

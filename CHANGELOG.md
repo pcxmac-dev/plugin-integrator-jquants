@@ -2,13 +2,15 @@
 
 ## 0.2.0 (2026-11-03)
 
-The plugin is a class on plugin API 2.0 (the class contract, liminal-lib 1.3.0; the user: "all the plugins under
+Renamed `plugin-integrator-jquants` (the package `plugin_integrator_jquants`; it was `liminal-plugin-jquants`) on 2026-11-03: the naming by system (plugins are `plugin-<app>-<name>`), on liminal-libs 1.4.0 (`liminal_libs`, the library renamed with it).
+
+The plugin is a class on plugin API 2.0 (the class contract, liminal-libs 1.3.0; the user: "all the plugins under
 liminal should basically follow inheritance/oop paradigm"): `PLUGIN` is an instance of `JQuantsPlugin`, a
 `FeedPlugin`, what it declares its class attributes (its key, `JQUANTS_PLAN` and its choices, its exchange, its
 plans ...) and what it does its methods (`view`, `rate`, `build`, `has_keys`, `markets`, `scan`). It declares each
 plan's publication delay itself (`delays`: `jquants-free` end of day twelve weeks late, `jquants-light`, `-standard`
 and `-premium` end of day; the library's rows stay). Every fact, limit and string is as in 1.0.0. Its version is the
-release's, 0.2.0, as every Liminal plugin's on `release/0.2.0`; requires liminal-lib 1.3.0.
+release's, 0.2.0, as every Liminal plugin's on `release/0.2.0`; requires liminal-libs 1.3.0.
 
 ## 1.0.0 (2026-11-02)
 
@@ -25,4 +27,4 @@ late, five, ten and twenty years), the free plan's delay known to the library by
 (`jquants-free`); the capability scan tells the plans apart by the endpoints each adds (TOPIX from Light, the
 other indices from Standard, futures on Premium) and sets `JQUANTS_PLAN` where you set none. A refused key (a
 403 saying so) ends the run as a refused key does; a 429 is a rate limit, never an empty answer. Requires
-liminal-lib 1.2.0.
+liminal-libs 1.2.0.
