@@ -13,12 +13,14 @@ from liminal_lib import composite, freshness
 from liminal_lib.collector import history_floor
 from liminal_lib.config import load_settings
 from liminal_lib.errors import NotEntitled, RateLimited, SourceError, Unauthorized
+from liminal_lib.freshness import Delay
 from liminal_lib.sources import feed_profiles, is_archive, markets, provider, rate_window, registry, supports
 from liminal_lib.sources.archive import ET, ms
+from liminal_lib.sources.registry import FeedPlugin
 from liminal_lib.symbols import resolve
 
 import liminal_plugin_jquants as jquants
-from liminal_plugin_jquants import PER_DAY, PER_RUN, TIER, plan_found, plan_of, probes, scan
+from liminal_plugin_jquants import PER_DAY, PER_RUN, TIER, plan_found, plan_of, probes
 from liminal_plugin_jquants.client import (API, BARS, MASTER, TSE, JQuantsClient, JQuantsSource, jquants_code, read_bars,
                                            stored_ticker)
 
@@ -211,24 +213,24 @@ def test_its_scan_tells_the_plans_apart_by_the_endpoints_each_adds():
     assert asked[0][2] == {"code": "72030", "from": "2026-07-14", "to": "2026-07-20"} and asked[3][2] == {"date": "2026-07-20"}
     served, plan = FakeResponse(200, {"data": [{"Date": "2026-07-20"}]}), FakeResponse(403, {"message": "not in your plan"})
     src, session = _scanner(served, plan, plan, plan)
-    out = scan(src, date(2026, 11, 2))
+    out = jquants.PLUGIN.scan(src, date(2026, 11, 2))
     assert out.plan == {"JQUANTS_PLAN": "free"} and [ok for _, ok, _ in out.results] == [True, False, False, False]
     assert len(session.calls) == 4 and session.calls[1][0].endswith("/v2/indices/bars/daily/topix")
-    assert scan(_scanner(served, served, plan, plan)[0], date(2026, 11, 2)).plan == {"JQUANTS_PLAN": "light"}
-    assert scan(_scanner(served, served, served, plan)[0], date(2026, 11, 2)).plan == {"JQUANTS_PLAN": "standard"}
-    assert scan(_scanner(served, served, served, served)[0], date(2026, 11, 2)).plan == {"JQUANTS_PLAN": "premium"}
+    assert jquants.PLUGIN.scan(_scanner(served, served, plan, plan)[0], date(2026, 11, 2)).plan == {"JQUANTS_PLAN": "light"}
+    assert jquants.PLUGIN.scan(_scanner(served, served, served, plan)[0], date(2026, 11, 2)).plan == {"JQUANTS_PLAN": "standard"}
+    assert jquants.PLUGIN.scan(_scanner(served, served, served, served)[0], date(2026, 11, 2)).plan == {"JQUANTS_PLAN": "premium"}
     # a probe that failed otherwise tells nothing: no plan is taken on less than its endpoint answering
     broken = [FakeResponse(500, {"message": "Internal Server Error"}) for _ in range(5)]
-    out = scan(_scanner(served, *broken, plan, plan)[0], date(2026, 11, 2))
+    out = jquants.PLUGIN.scan(_scanner(served, *broken, plan, plan)[0], date(2026, 11, 2))
     assert out.plan == {} and [ok for _, ok, _ in out.results] == [True, False, False, False]
     assert plan_found({jquants.BARS_PROBE: True}) is None and plan_found({jquants.PREMIUM: True}) == "premium"
     # a refused key ends the scan at once
     src, session = _scanner(FakeResponse(403, {"message": "The incoming api key is invalid or expired."}))
-    out = scan(src, date(2026, 11, 2))
+    out = jquants.PLUGIN.scan(src, date(2026, 11, 2))
     assert out.plan == {} and len(out.results) == 1 and not out.results[0][1] and len(session.calls) == 1
     registry.reload()
     p = provider("jquants")
-    assert p.scan is scan and p.plan_vars == ("JQUANTS_PLAN",)
+    assert p.has_scan and p.scan.__func__ is jquants.JQuantsPlugin.scan and p.plan_vars == ("JQUANTS_PLAN",)
     assert p.plan_choices == {"JQUANTS_PLAN": ("free", "light", "standard", "premium")}
     found = p.run_scan(_scanner(served, served, plan, plan)[0], load_settings(env=KEYS, env_file=None))
     assert found.plan == {"JQUANTS_PLAN": "light"} and found.results[-1][0] == "its server's rate limit"
@@ -241,11 +243,11 @@ def test_the_app_loads_it_from_this_package_with_its_own_version():
     assert p is not None, dict(registry.errors())
     assert p.origin in {"package: liminal-plugin-jquants (liminal_plugin_jquants)",
                         "plugins/liminal-plugin-jquants (liminal_plugin_jquants)"}  # its package, or its checkout in the workspace's plugin directory
-    assert p.version == version("liminal-plugin-jquants") and p.api == "1.12"
+    assert p.version == version("liminal-plugin-jquants") and p.api == "2.0"
     assert registry.api_refusal(p.api) is None and jquants.PLUGIN.version == ""
     assert not [why for where, why in registry.errors() if "jquants" in where or "jquants" in why]
     row = {r["name"]: r for r in registry.menu()}["jquants"]
-    assert (row["version"], row["api"]) == (version("liminal-plugin-jquants"), "1.12")
+    assert (row["version"], row["api"]) == (version("liminal-plugin-jquants"), "2.0")
     assert [k["name"] for k in row["keys"]] == ["JQUANTS_API_KEY"] and row["keys"][0]["secret"]
     assert row["planChoices"] == [{"name": "JQUANTS_PLAN", "choices": ["free", "light", "standard", "premium"]}]
     assert registry.plugin_feeds("jquants") == ["jquants"]
@@ -275,7 +277,23 @@ def test_it_keeps_its_facts(monkeypatch):
     held = []
     monkeypatch.setattr(jquants, "limiter", lambda name, st, key: held.append(("window", name, key)))
     monkeypatch.setattr(jquants, "machine_caps", lambda client, name, st, key: held.append(("day", name, key)) or client)
-    source = jquants.build(s, 5)
+    source = jquants.PLUGIN.build(s, 5)
     assert held == [("window", "jquants", "k"), ("day", "jquants", "k")] and source.name == "jquants" and source.has_key
     assert source.client.request_budget == 5 and source.client._headers["x-api-key"] == "k"
-    assert not jquants.build(load_settings(env={}, env_file=None), 5).has_key
+    assert not jquants.PLUGIN.build(load_settings(env={}, env_file=None), 5).has_key
+
+
+def test_it_is_a_class_on_plugin_api_2_0():
+    """The plugin is an instance of its class (plugin API 2.0, liminal-lib 1.3.0): what it declares its class
+    attributes, what it does its methods; the registry loads it as that class."""
+    assert isinstance(jquants.PLUGIN, jquants.JQuantsPlugin) and isinstance(jquants.PLUGIN, FeedPlugin)
+    assert jquants.PLUGIN.api == "2.0" and not jquants.PLUGIN.is_record
+    p = registry.reload()["jquants"]
+    assert type(p) is jquants.JQuantsPlugin and p.api == "2.0" and p.name == "jquants"
+    # the hooks it gives, the rest the contract's defaults
+    assert p.gives("build") and p.gives("view") and p.gives("rate") and p.gives("has_keys") and p.gives("markets")
+    assert p.gives("scan") and p.has_scan and not p.gives("carries") and not p.has_settings
+    # it declares each plan's publication delay itself, the library's rows for them still in place
+    assert p.delays == {"jquants-free": {"stock": Delay("eod", timedelta(weeks=12))}, "jquants-light": {"stock": Delay("eod")},
+                        "jquants-standard": {"stock": Delay("eod")}, "jquants-premium": {"stock": Delay("eod")}}
+    assert all(p.delays[tier] == freshness.PLAN_DELAYS[tier] for tier in p.delays)

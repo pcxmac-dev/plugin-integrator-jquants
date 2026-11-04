@@ -21,7 +21,7 @@ A Liminal provider plugin released on its own. The app finds it through the entr
 Into the app's environment, from the app's folder:
 
 ```powershell
-.venv\Scripts\python.exe -m pip install "liminal-plugin-jquants @ git+https://github.com/pcxmac-dev/liminal-plugin-jquants@v1.0.0"
+.venv\Scripts\python.exe -m pip install "liminal-plugin-jquants @ git+https://github.com/pcxmac-dev/liminal-plugin-jquants@v0.2.0"
 ```
 
 or with the app's plugins (`pip install -e ".[plugins]"` in liminal-app). The app loads it on its next start.
@@ -40,9 +40,10 @@ or with the app's plugins (`pip install -e ".[plugins]"` in liminal-app). The ap
 
 ## Compatibility
 
-It is written for plugin API 1.12 (`PLUGIN.api`: the exchanges a feed carries, `Provider.exchanges`;
-liminal-lib 1.2.0 or later). An app offering 1.12 or a later 1.x loads it; an app of another major, or one
-older than 1.12, leaves it out and says why on the Plugins view.
+It is written for plugin API 2.0, the class contract (`PLUGIN`, an instance of `JQuantsPlugin`, a `FeedPlugin`:
+the exchanges a feed carries, `exchanges`, and its plans' publication delays, `delays`; liminal-lib 1.3.0 or
+later). An app offering 2.0 or a later 2.x loads it; an app of another major leaves it out and says why on the
+Plugins view.
 
 ## Develop
 
