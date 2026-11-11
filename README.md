@@ -16,12 +16,28 @@ A Liminal provider plugin released on its own. The app finds it through the entr
 `liminal.providers` and lists it on the Plugins view and in `liminal-charts plugins` as
 `package: plugin-integrator-jquants`, with this package's version.
 
+## Its API
+
+It attaches to [J-Quants API V2](https://jpx-jquants.com/en/spec) (`https://api.jquants.com/v2`, an account's key in
+the `x-api-key` header); its page in every app shows it (`PLUGIN.apis`), with every section of the reference, its 30
+calls and the five it makes, and what its client learned (`PLUGIN.api_facts()`):
+
+- the [issue master](https://jpx-jquants.com/en/spec/eq-master) and the
+  [daily bars](https://jpx-jquants.com/en/spec/eq-bars-daily), for the directory and the bars; TOPIX, the other
+  indices and futures for the scan alone (which plan the key is on);
+- the [plans and data periods](https://jpx-jquants.com/en/spec/data-spec), the
+  [rate limits](https://jpx-jquants.com/en/spec/rate-limits) (5 to 500 requests a minute by plan) and the plans'
+  prices on [its home page](https://jpx-jquants.com/en) (Free ¥0, Light ¥1,650, Standard ¥3,300, Premium ¥16,500 a
+  month);
+- JPX's [terms](https://jpx-jquants.com/en/termsofservice) and [usage FAQ](https://jpx-jquants.com/en/help/usage):
+  private use by individuals only, the data itself never shared in a viewable form.
+
 ## Install
 
 Into the app's environment, from the app's folder:
 
 ```powershell
-.venv\Scripts\python.exe -m pip install "plugin-integrator-jquants @ git+https://github.com/pcxmac-dev/plugin-integrator-jquants@v0.2.0"
+.venv\Scripts\python.exe -m pip install "plugin-integrator-jquants @ git+https://github.com/pcxmac-dev/plugin-integrator-jquants@v0.3.0"
 ```
 
 or with the app's plugins (`pip install -e ".[plugins]"` in liminal-charts). The app loads it on its next start.
@@ -40,10 +56,10 @@ or with the app's plugins (`pip install -e ".[plugins]"` in liminal-charts). The
 
 ## Compatibility
 
-It is written for plugin API 2.0, the class contract (`PLUGIN`, an instance of `JQuantsPlugin`, a `FeedPlugin`:
-the exchanges a feed carries, `exchanges`, and its plans' publication delays, `delays`; liminal-libs 1.3.0 or
-later). An app offering 2.0 or a later 2.x loads it; an app of another major leaves it out and says why on the
-Plugins view.
+It is written for plugin API 2.2, the class contract (`PLUGIN`, an instance of `JQuantsPlugin`, a `FeedPlugin`:
+the exchanges a feed carries, `exchanges`, its plans' publication delays, `delays`, and what it attaches to, `apis`;
+liminal-libs 1.49.0 or later). An app offering 2.2 or a later 2.x loads it; an app of another major, or one older than
+2.2, leaves it out and says why on the Plugins view.
 
 ## Develop
 

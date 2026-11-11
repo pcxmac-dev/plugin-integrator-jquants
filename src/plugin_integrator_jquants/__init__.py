@@ -27,9 +27,15 @@ window kept here stays inside the plan's). JPX's terms: individual investors onl
 The plan is JQUANTS_PLAN's (free, the default: never more than the user says or the scan finds). The
 API has no account endpoint, but its scan (`capabilities`, four requests) tells the plans apart by the
 endpoints each adds (TOPIX from Light, the other indices from Standard, futures on Premium) and answers
-with the plan that shows, which the app applies where the user set none (Scanned.plan)."""
+with the plan that shows, which the app applies where the user set none (Scanned.plan).
+
+Plugin API 2.2 (liminal-libs 1.49.0; the user, 2026-11-11: "each plugin should reflect the the API its attached to, and
+present links that provide documentation"): `apis`, what it talks to (apis.py: J-Quants API V2 with JPX's pages, its
+plans' prices and limits, every section of its reference and the calls it makes among the rest), and `api_facts()`,
+what its client learned while it ran and the plan its last scan showed (facts.py), asking nothing."""
 from __future__ import annotations
 
+import time
 from dataclasses import replace
 from datetime import date, timedelta
 
@@ -37,7 +43,10 @@ from liminal_libs.config import Tier
 from liminal_libs.errors import NotEntitled, SourceError, Unauthorized
 from liminal_libs.freshness import Delay
 from liminal_libs.sources.registry import FeedPlugin, KeyVar, Scanned, limiter, machine_caps
+from .apis import APIS
+from .apis import NAME as API_NAME
 from .client import API, BARS, MIC, JQuantsClient, JQuantsSource
+from .facts import NOTES, when
 
 NAME = "jquants"
 KEY = "JQUANTS_API_KEY"  # an account's key from jpx-jquants.com's dashboard, a user environment variable
@@ -116,12 +125,12 @@ def plan_found(served: dict[str, bool]) -> str | None:
 
 
 class JQuantsPlugin(FeedPlugin):
-    """The feed as a class (plugin API 2.0): what it declares its class attributes (its key, its plans and
-    their publication delays, its exchange), what it does its methods (`view`: JQUANTS_PLAN's plan; `rate`:
-    the plan's window; `build`: its source on a keyed client; `has_keys`, `markets`; `scan`: the plan the
-    endpoints show), the rest the contract's defaults."""
+    """The feed as a class (plugin API 2.2): what it declares its class attributes (its key, its plans and
+    their publication delays, its exchange, what it attaches to), what it does its methods (`view`:
+    JQUANTS_PLAN's plan; `rate`: the plan's window; `build`: its source on a keyed client; `has_keys`,
+    `markets`; `scan`: the plan the endpoints show; `api_facts`), the rest the contract's defaults."""
 
-    api = "2.0"  # the contract it needs (the class contract: exchanges, a listing abroad comes to it and to no US feed; delays)
+    api = "2.2"  # the contract it needs (the class contract: exchanges, a listing abroad comes to it and to no US feed; delays; 2.2: apis)
     name = NAME
     title = "J-Quants"
     assets = frozenset({"stock"})
@@ -150,6 +159,8 @@ class JQuantsPlugin(FeedPlugin):
     delays = {"jquants-free": {"stock": Delay("eod", timedelta(weeks=DELAY_WEEKS))},
               "jquants-light": {"stock": Delay("eod")}, "jquants-standard": {"stock": Delay("eod")},
               "jquants-premium": {"stock": Delay("eod")}}
+    # what it attaches to (plugin API 2.2): J-Quants API V2, with JPX's pages (apis.py)
+    apis = APIS
 
     def view(self, base):
         """The settings as this feed sees them: its plan's tier (history, requests a minute) and caps."""
@@ -169,7 +180,14 @@ class JQuantsPlugin(FeedPlugin):
         key = api_key(settings)
         client = JQuantsClient(API, headers={"x-api-key": key} if key else {}, request_budget=request_budget,
                                rate_limiter=limiter(self.name, settings, key))
+        NOTES.note(API_NAME, client)  # held weakly: api_facts reads what it learned (never its key)
         return JQuantsSource(machine_caps(client, self.name, settings, key), has_key=bool(key))
+
+    def api_facts(self):
+        """What its client learned of J-Quants while it ran (the requests made, the last answer's clock, a key the
+        server refused) and the plan its last scan showed, from what this process already holds: nothing is asked
+        (facts.py). The key itself is never said."""
+        return NOTES.facts(a.name for a in self.apis)
 
     def scan(self, source, today: date | None = None) -> Scanned:
         """Each probe once, in order: served (rows in a 200), refused by the plan (a 403: below it), or
@@ -196,6 +214,7 @@ class JQuantsPlugin(FeedPlugin):
             served[what] = True
             out.append((what, True, f"{len(rows):,} rows to {params.get('to') or params.get('date')}"))
         plan = plan_found(served)
+        NOTES.keep(API_NAME, {"Plan its endpoints showed": f"{plan or 'not settled'} (scan of {when(time.time())})"})
         return Scanned(tuple(out), {PLAN: plan} if plan else {})
 
 

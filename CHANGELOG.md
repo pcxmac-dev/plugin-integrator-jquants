@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.0 (2026-11-11)
+
+Its API on its page (plugin API 2.2, liminal-libs 1.49.0; the user: "each plugin should reflect the the API its attached
+to, and present links that provide documentation, the plugin interface should more or less contain what it already has,
+BUT, it should also expose more of what the API is about"). `JQuantsPlugin.apis` declares what it talks to, read from
+J-Quants' own pages on 2026-11-11 (`apis.py`): **J-Quants API V2**, with its documentation and reference, quick start,
+plans and data periods, rate limits, plans' prices, the V1 migration, release notes, incidents, the dashboard, the terms
+and the usage FAQ, its GitHub; every section of its reference in ten parts (equities, indices, derivatives, financials,
+market data, EDINET filings, the two add-ons, bulk download, the common specifications), each said used or not; all 30
+of its calls, the five it makes (the issue master and daily bars, and the scan's TOPIX, indices and futures probes)
+among them. The card says JPX's terms (private use by individuals only; the data itself never shared in a viewable
+form) and its prices (Free ¥0 to Premium ¥16,500 a month).
+
+`api_facts()` says what its client learned while it ran and what its last scan showed, asking nothing: the requests
+made, the last answer's clock, a key the server refused (never the key), the plan its endpoints showed (`facts.py`: the
+client held weakly, its last words kept when it goes). Tests: the contract at 2.2, the card's calls the ones its source
+and its scan send, the facts, and every page it names answering (only with `LIMINAL_VENDOR_PAGES=1`). On liminal-libs
+1.49.0 or later; every behaviour, limit and string as in 0.2.0.
+
 ## 0.2.0 (2026-11-03)
 
 Renamed `plugin-integrator-jquants` (the package `plugin_integrator_jquants`; it was `liminal-plugin-jquants`) on 2026-11-03: the naming by system (plugins are `plugin-<app>-<name>`), on liminal-libs 1.4.0 (`liminal_libs`, the library renamed with it).

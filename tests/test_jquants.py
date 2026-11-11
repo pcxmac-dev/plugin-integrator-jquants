@@ -243,11 +243,11 @@ def test_the_app_loads_it_from_this_package_with_its_own_version():
     assert p is not None, dict(registry.errors())
     assert p.origin in {"package: plugin-integrator-jquants (plugin_integrator_jquants)",
                         "plugins/plugin-integrator-jquants (plugin_integrator_jquants)"}  # its package, or its checkout in the workspace's plugin directory
-    assert p.version == version("plugin-integrator-jquants") and p.api == "2.0"
+    assert p.version == version("plugin-integrator-jquants") and p.api == "2.2"
     assert registry.api_refusal(p.api) is None and jquants.PLUGIN.version == ""
     assert not [why for where, why in registry.errors() if "jquants" in where or "jquants" in why]
     row = {r["name"]: r for r in registry.menu()}["jquants"]
-    assert (row["version"], row["api"]) == (version("plugin-integrator-jquants"), "2.0")
+    assert (row["version"], row["api"]) == (version("plugin-integrator-jquants"), "2.2")
     assert [k["name"] for k in row["keys"]] == ["JQUANTS_API_KEY"] and row["keys"][0]["secret"]
     assert row["planChoices"] == [{"name": "JQUANTS_PLAN", "choices": ["free", "light", "standard", "premium"]}]
     assert registry.plugin_feeds("jquants") == ["jquants"]
@@ -283,13 +283,13 @@ def test_it_keeps_its_facts(monkeypatch):
     assert not jquants.PLUGIN.build(load_settings(env={}, env_file=None), 5).has_key
 
 
-def test_it_is_a_class_on_plugin_api_2_0():
-    """The plugin is an instance of its class (plugin API 2.0, liminal-libs 1.3.0): what it declares its class
+def test_it_is_a_class_on_plugin_api_2_2():
+    """The plugin is an instance of its class (plugin API 2.2, liminal-libs 1.49.0): what it declares its class
     attributes, what it does its methods; the registry loads it as that class."""
     assert isinstance(jquants.PLUGIN, jquants.JQuantsPlugin) and isinstance(jquants.PLUGIN, FeedPlugin)
-    assert jquants.PLUGIN.api == "2.0" and not jquants.PLUGIN.is_record
+    assert jquants.PLUGIN.api == "2.2" and not jquants.PLUGIN.is_record
     p = registry.reload()["jquants"]
-    assert type(p) is jquants.JQuantsPlugin and p.api == "2.0" and p.name == "jquants"
+    assert type(p) is jquants.JQuantsPlugin and p.api == "2.2" and p.name == "jquants"
     # the hooks it gives, the rest the contract's defaults
     assert p.gives("build") and p.gives("view") and p.gives("rate") and p.gives("has_keys") and p.gives("markets")
     assert p.gives("scan") and p.has_scan and not p.gives("carries") and not p.has_settings
